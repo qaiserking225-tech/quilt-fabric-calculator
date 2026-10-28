@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quilt Fabric Calculator</title>
+<!-- Open source version of the ToolNestCalc calculator. Live demo: https://toolnestcalc.com/quilt-fabric-calculator/ -->
+<style>
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#22333b;background:#f4f7f8;margin:0;padding:0 1rem}
+.wrap{max-width:900px;margin:0 auto;padding:1rem 0}
+.wrap a{color:#1e88e5}
+.wrap .quilt-tool{max-width:760px;margin:2rem auto;display:flex;flex-direction:column;gap:1.25rem;font-size:1.02rem;line-height:1.55}
+.wrap .quilt-size,.wrap .quilt-section,.wrap .quilt-totals{background:#ffffff;border:1px solid #dde3e6;border-radius:14px;box-shadow:0 2px 14px rgba(20,40,50,0.08);padding:0;overflow:hidden}
+.wrap .quilt-size h2,.wrap .quilt-section h2,.wrap .quilt-totals h2{margin:0;padding:0.85rem 1.25rem;background:#dbe9f0;color:#1c3a4a;font-size:1.25rem}
+.wrap .quilt-size label,.wrap .quilt-section label{display:block;font-weight:700;text-align:left;margin:0.7rem 1.25rem;color:#22333b}
+.wrap .quilt-size input,.wrap .quilt-size select,.wrap .quilt-section input,.wrap .quilt-section select{width:100%;max-width:420px;padding:0.6rem 0.7rem;margin-top:0.3rem;border:1px solid #c8d2d6;border-radius:8px;font-size:1rem;background:#fff}
+.wrap .quilt-size input:focus,.wrap .quilt-size select:focus,.wrap .quilt-section input:focus,.wrap .quilt-section select:focus{outline:none;border-color:#0b6fa4;box-shadow:0 0 0 3px rgba(11,111,164,0.18)}
+.wrap .quilt-section input[type=checkbox]{accent-color:#0b6fa4;width:auto}
+.wrap .quilt-out{background:#f2f7f2;border:1px solid #cfe0cf;border-radius:10px;padding:0.9rem 1rem;margin:0.7rem 1.25rem 1.1rem;font-weight:600;color:#1c2b31}
+.wrap .quilt-totals .quilt-out{background:#eaf3f8;border-color:#bcd7e6;font-size:1.2rem}
+.wrap .quilt-error{color:#b00020;min-height:1.2em;margin:0.5rem 1.25rem}
+.wrap .quilt-note{font-size:0.92rem;color:#5a6b72;margin:0.7rem 1.25rem 1.1rem}
+.wrap table{border-collapse:collapse;margin:1rem 0;width:100%}
+.wrap th{background:#dbe9f0;color:#1c3a4a;padding:0.55rem 0.8rem;text-align:left}
+.wrap td{border:1px solid #dde3e6;padding:0.55rem 0.8rem;text-align:left}
+@media (max-width:600px){.wrap .quilt-size input,.wrap .quilt-size select,.wrap .quilt-section input,.wrap .quilt-section select{max-width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Free Quilt Fabric Calculator</h1>
+<p class="lead">This quilt fabric calculator answers the four quilt math questions every quilter asks: quilt-top yardage, backing, binding, and squares per yard. Enter your quilt size once at the top and every section below uses it.</p>
+
+<div class="quilt-tool">
+<div class="quilt-size">
+<h2>Quilt size</h2>
+<label>Size preset
+<select id="qPreset">
+<option value="baby">Baby 36 x 52 in</option>
+<option value="throw" selected>Throw 60 x 72 in</option>
+<option value="twin">Twin 70 x 90 in</option>
+<option value="full">Full 84 x 90 in</option>
+<option value="queen">Queen 90 x 108 in</option>
+<option value="king">King 108 x 108 in</option>
+<option value="calking">California King 102 x 100 in</option>
+<option value="custom">Custom</option>
+</select>
+</label>
+<label>Quilt width (in)
+<input id="qW" type="number" value="60" min="1" step="0.5">
+</label>
+<label>Quilt length (in)
+<input id="qL" type="number" value="72" min="1" step="0.5">
+</label>
+<label>Usable fabric width (in)
+<input id="qUsable" type="number" value="42" min="20" max="120" step="0.5">
+</label>
+<p class="quilt-note">Usable width is the width after trimming the selvages. Quilting cotton is sold 42 to 44 in wide, and most quilters get 40 to 42 in of usable width. Sizes above are common defaults only: there is no single standard quilt size, so custom dimensions always work.</p>
+</div>
+
+<div class="quilt-section">
+<h2>1. Quilt-top yardage</h2>
+<label>Finished block or piece size (in)
+<input id="qBlock" type="number" value="6" min="0.5" step="0.25">
+</label>
+<label>Pieces per block
+<input id="qPieces" type="number" value="1" min="1" step="1">
+</label>
+<label>Waste allowance (percent)
+<input id="qWaste" type="number" value="10" min="0" max="20" step="1">
+</label>
+<p id="qTopError" class="quilt-error"></p>
+<div id="qTopOut" class="quilt-out"></div>
+<p class="quilt-note">Piece-count method: cut size is finished size plus 1/2 in for two 1/4 in seams. If your quilt size is not an exact multiple of the block size, the finished quilt shrinks to the nearest multiple, and the page shows that actual size.</p>
+<p class="quilt-note">An area shortcut (quilt area times a factor) understates yardage when pieces are small, because it ignores strip-remainder waste.</p>
+</div>
+
+<div class="quilt-section">
+<h2>2. Backing and batting</h2>
+<label>Overage per side (in)
+<select id="qOverage">
+<option value="4" selected>4 in (home quilting)</option>
+<option value="6">6 in</option>
+<option value="8">8 in (long-arm)</option>
+</select>
+</label>
+<label>Backing fabric
+<select id="qBackFabric">
+<option value="standard" selected>Standard width (uses usable width above)</option>
+<option value="wide">Wide backing, 108 in (usable 106 in)</option>
+</select>
+</label>
+<p id="qBackError" class="quilt-error"></p>
+<div id="qBackOut" class="quilt-out"></div>
+<p class="quilt-note">Backing seams use a 1/2 in allowance, so each seam consumes 1 in of width. Both layouts are computed and the smaller yardage is recommended. If you use a long-arm quilter, confirm their minimum overage before buying. Batting size equals backing size: trim after quilting.</p>
+</div>
+
+<div class="quilt-section">
+<h2>3. Binding</h2>
+<label>Strip width (in)
+<select id="qStripW">
+<option value="2.25">2.25 in (machine binding)</option>
+<option value="2.5" selected>2.5 in (double-fold)</option>
+<option value="custom">Custom</option>
+</select>
+</label>
+<label id="qStripCustomWrap" style="display:none">Custom strip width (in)
+<input id="qStripCustom" type="number" value="2.5" min="1" step="0.25">
+</label>
+<label>Join allowance (in)
+<input id="qJoin" type="number" value="12" min="0" step="1">
+</label>
+<label><input id="qBias" type="checkbox"> Bias binding (for curved or scalloped edges)</label>
+<p id="qBindError" class="quilt-error"></p>
+<div id="qBindOut" class="quilt-out"></div>
+<p class="quilt-note">Published join allowances run 10 to 20 in; 12 in is the default here and you can change it. Bias binding multiplies the straight-grain yardage by 1.5, the conservative published figure, because running short mid-binding is the failure mode. Published bias allowances range from 15 percent to 50 percent extra.</p>
+</div>
+
+<div class="quilt-section">
+<h2>4. Squares, yardage and pre-cuts</h2>
+<label>Cut square size (in)
+<input id="qCut" type="number" value="5" min="0.5" step="0.25">
+</label>
+<label>Number of squares wanted
+<input id="qNSq" type="number" value="120" min="1" step="1">
+</label>
+<p id="qSqError" class="quilt-error"></p>
+<div id="qSqOut" class="quilt-out"></div>
+<p class="quilt-note">Squares per yard uses a grid count, never area division: area division overstates what you can actually cut. A fat quarter is 18 x 22 in. A 9 x 21 in cut is a quarter-yard cut, not a fat quarter.</p>
+</div>
+
+<div class="quilt-totals">
+<h2>Total fabric to buy</h2>
+<div id="qTotalOut" class="quilt-out"></div>
+</div>
+</div>
+
+<h2>Standard quilt sizes reference</h2>
+<p>If your quilt does not match a chart size, enter its exact size in the quilt fabric calculator above.</p>
+<p>Published charts disagree on every size, because mattress depth, side drop and pillow tuck all vary. Treat these as common defaults, not standards.</p>
+<table>
+<tr><th>Size</th><th>Common default</th><th>Published range</th></tr>
+<tr><td>Baby</td><td>36 x 52 in</td><td>30 x 40 to 36 x 52 in</td></tr>
+<tr><td>Throw</td><td>50 x 65 in</td><td>45 x 45 to 60 x 70 in</td></tr>
+<tr><td>Twin</td><td>70 x 90 in</td><td>64 x 80 to 72 x 90 in</td></tr>
+<tr><td>Full</td><td>84 x 90 in</td><td>76 x 87 to 85 x 108 in</td></tr>
+<tr><td>Queen</td><td>90 x 108 in</td><td>88 x 92 to 96 x 108 in</td></tr>
+<tr><td>King</td><td>108 x 108 in</td><td>104 x 92 to 110 x 108 in</td></tr>
+</table>
+
+<h2>Pre-cut reference</h2>
+<table>
+<tr><th>Pre-cut</th><th>Size</th><th>Count</th></tr>
+<tr><td><a href="https://www.fatquartershop.com/pre-cut-quilt-fabric-guide">Charm pack</a></td><td>5 x 5 in squares</td><td>42 per pack</td></tr>
+<tr><td>Mini charm pack</td><td>2.5 x 2.5 in squares</td><td>40 or more per pack</td></tr>
+<tr><td>Layer cake</td><td>10 x 10 in squares</td><td>42 per pack</td></tr>
+<tr><td>Jelly roll</td><td>2.5 in strips, full fabric width</td><td>40 per roll</td></tr>
+<tr><td>Fat quarter</td><td>18 x 22 in</td><td>Sold singly or in bundles</td></tr>
+<tr><td>Fat eighth</td><td>9 x 22 in</td><td>Sold singly or in bundles</td></tr>
+</table>
+
+<h2>Frequently asked questions</h2>
+<h3>Why does this quilt fabric calculator give more yardage than an area estimate?</h3>
+<p>Because fabric is cut in strips, and the leftover strip ends cannot be reassembled into full pieces. The piece-count method counts real strips and real pieces, so it matches what you actually cut.</p>
+<h3>What is usable fabric width?</h3>
+<p>The width left after trimming the selvages. A 44 in bolt usually gives 42 in usable, and a 42 in bolt gives about 40 in. Enter your own measured width for exact results.</p>
+<h3>Do I need bias binding?</h3>
+<p>Only for curved or scalloped edges. Straight edges take straight-grain binding, which wastes less fabric. Bias binding is more durable under wear, which is why it is the choice for edges that curve.</p>
+<h3>Does this quilt fabric calculator cover borders?</h3>
+<p>Not in this version. Border yardage with multiple borders and mitered corners is a separate calculation. This page covers quilt-top yardage, backing, binding and squares.</p>
+<h3>How much extra backing do I need for long-arm quilting?</h3>
+<p>Long-arm quilters ask for 4 to 8 in per side. This page defaults to 4 in and offers 6 and 8 in. Confirm your quilter's minimum before buying, since it varies.</p>
+
+<p>See also: <a href="https://toolnestcalc.com/free-online-calculators-tools/">Free Online Calculators and Tools</a> and <a href="https://toolnestcalc.com/name-tracing-worksheets/">Name Tracing Worksheets</a>.</p>
+</div>
+<script>
+// QUILT-START
+function qRoundUpEighth(y) {
+  return Math.ceil(y * 8 - 0.000001) / 8;
+}
+function qFmtYards(y) {
+  var whole = Math.floor(y + 0.000001);
+  var rem = Math.round((y - whole) * 8);
+  if (rem === 8) { whole = whole + 1; rem = 0; }
+  var fracs = ['', '1/8', '1/4', '3/8', '1/2', '5/8', '3/4', '7/8'];
+  if (rem === 0) { return whole + ' yd'; }
+  if (whole === 0) { return fracs[rem] + ' yd'; }
+  return whole + ' ' + fracs[rem] + ' yd';
+}
+function qTop(qW, qL, block, piecesPerBlock, usable, wastePct) {
+  var cut = block + 0.5;
+  var across = Math.floor(qW / block);
+  var down = Math.floor(qL / block);
+  if (across < 1 || down < 1) { return null; }
+  var perStrip = Math.floor(usable / cut);
+  if (perStrip < 1) { return null; }
+  var totalPieces = across * down * piecesPerBlock;
+  var strips = Math.ceil(totalPieces / perStrip);
+  var exact = strips * cut / 36;
+  var buy = qRoundUpEighth(exact * (1 + wastePct / 100));
+  return { cut: cut, across: across, down: down, actualW: across * block, actualL: down * block, totalPieces: totalPieces, perStrip: perStrip, strips: strips, exact: exact, buy: buy };
+}
+function qBacking(qW, qL, overage, usable) {
+  var bW = qW + 2 * overage;
+  var bL = qL + 2 * overage;
+  if (usable <= 1) { return null; }
+  function layout(dim, cutLen) {
+    var panels = Math.ceil((dim - 1) / (usable - 1));
+    var yards = qRoundUpEighth(panels * cutLen / 36);
+    return { panels: panels, cutLen: cutLen, yards: yards };
+  }
+  var vert = layout(bW, bL);
+  var horiz = layout(bL, bW);
+  var best = 'vertical';
+  if (horiz.yards < vert.yards) { best = 'horizontal'; }
+  return { bW: bW, bL: bL, vert: vert, horiz: horiz, best: best };
+}
+function qBinding(qW, qL, stripW, join, usable, bias) {
+  var perimeter = 2 * (qW + qL);
+  var totalLen = perimeter + join;
+  var strips = Math.ceil(totalLen / usable);
+  var yards = strips * stripW / 36;
+  if (bias) { yards = yards * 1.5; }
+  yards = qRoundUpEighth(yards);
+  return { perimeter: perimeter, totalLen: totalLen, strips: strips, yards: yards };
+}
+function qSquares(cut, usable) {
+  var across = Math.floor(usable / cut);
+  var down = Math.floor(36 / cut);
+  var perYard = across * down;
+  var perFQ = Math.floor(18 / cut) * Math.floor(22 / cut);
+  return { across: across, perYard: perYard, perFQ: perFQ };
+}
+function qYardsForSquares(n, cut, usable) {
+  var sq = qSquares(cut, usable);
+  if (sq.across < 1) { return null; }
+  var strips = Math.ceil(n / sq.across);
+  var yards = qRoundUpEighth(strips * cut / 36);
+  var fqs = 0;
+  if (sq.perFQ > 0) { fqs = Math.ceil(n / sq.perFQ); }
+  return { strips: strips, yards: yards, fqs: fqs, perYard: sq.perYard, perFQ: sq.perFQ };
+}
+if (typeof module !== 'undefined') {
+  module.exports = { qRoundUpEighth: qRoundUpEighth, qFmtYards: qFmtYards, qTop: qTop, qBacking: qBacking, qBinding: qBinding, qSquares: qSquares, qYardsForSquares: qYardsForSquares };
+}
+// QUILT-END
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var presets = { baby: [36, 52], throw: [60, 72], twin: [70, 90], full: [84, 90], queen: [90, 108], king: [108, 108], calking: [102, 100] };
+  function num(id) { return parseFloat($(id).value); }
+  function render() {
+    var qW = num('qW');
+    var qL = num('qL');
+    var usable = num('qUsable');
+    var topBuy = 0;
+    var backBest = 0;
+    var bindYards = 0;
+    var okTop = true;
+    var okBack = true;
+    var okBind = true;
+    if (isNaN(qW) || isNaN(qL) || isNaN(usable) || qW <= 0 || qL <= 0 || usable <= 1) {
+      $('qTopError').textContent = 'Enter a positive quilt width, length and usable fabric width.';
+      $('qTopOut').textContent = '';
+      $('qBackOut').textContent = '';
+      $('qBindOut').textContent = '';
+      $('qTotalOut').textContent = '';
+      return;
+    }
+    $('qTopError').textContent = '';
+    $('qBackError').textContent = '';
+    $('qBindError').textContent = '';
+    $('qSqError').textContent = '';
+    var block = num('qBlock');
+    var pieces = num('qPieces');
+    var waste = num('qWaste');
+    var top = null;
+    if (isNaN(block) || isNaN(pieces) || isNaN(waste) || block <= 0 || pieces < 1 || waste < 0) { okTop = false; }
+    else { top = qTop(qW, qL, block, pieces, usable, waste); }
+    if (top === null) { okTop = false; }
+    if (okTop) {
+      topBuy = top.buy;
+      $('qTopOut').textContent = 'Blocks: ' + top.across + ' across x ' + top.down + ' down. Actual finished size: ' + top.actualW + ' x ' + top.actualL + ' in. Total pieces: ' + top.totalPieces + '. Pieces per strip: ' + top.perStrip + '. Strips: ' + top.strips + '. Exact yardage: ' + top.exact.toFixed(2) + ' yd. Buy: ' + qFmtYards(top.buy) + '.';
+    } else {
+      $('qTopOut').textContent = '';
+      $('qTopError').textContent = 'Check the block size, pieces per block and waste allowance. The block must fit inside the quilt at least once.';
+    }
+    var overage = parseFloat($('qOverage').value);
+    var backUsable = usable;
+    if ($('qBackFabric').value === 'wide') { backUsable = 106; }
+    var back = qBacking(qW, qL, overage, backUsable);
+    if (back === null) { okBack = false; }
+    if (okBack) {
+      backBest = Math.min(back.vert.yards, back.horiz.yards);
+      $('qBackOut').textContent = 'Backing needed: ' + back.bW + ' x ' + back.bL + ' in. Vertical layout: ' + back.vert.panels + ' panels x ' + back.vert.cutLen + ' in = ' + qFmtYards(back.vert.yards) + '. Horizontal layout: ' + back.horiz.panels + ' panels x ' + back.horiz.cutLen + ' in = ' + qFmtYards(back.horiz.yards) + '. Recommended: ' + back.best + ' layout, ' + qFmtYards(backBest) + '. Batting: ' + back.bW + ' x ' + back.bL + ' in.';
+    } else {
+      $('qBackOut').textContent = '';
+      $('qBackError').textContent = 'Check the overage and fabric width.';
+    }
+    var stripW = 2.5;
+    if ($('qStripW').value === '2.25') { stripW = 2.25; }
+    if ($('qStripW').value === 'custom') { stripW = num('qStripCustom'); }
+    var join = num('qJoin');
+    var bias = $('qBias').checked;
+    var bind = null;
+    if (isNaN(stripW) || isNaN(join) || stripW <= 0 || join < 0) { okBind = false; }
+    else { bind = qBinding(qW, qL, stripW, join, usable, bias); }
+    if (okBind) {
+      bindYards = bind.yards;
+      var bindText = 'Perimeter: ' + bind.perimeter + ' in. Binding length with join allowance: ' + bind.totalLen + ' in. Strips: ' + bind.strips + '. Buy: ' + qFmtYards(bind.yards) + '.';
+      if (bias) { bindText = bindText + ' Bias selected: yardage includes the 1.5 times bias allowance (published allowances run 15 to 50 percent extra).'; }
+      $('qBindOut').textContent = bindText;
+    } else {
+      $('qBindOut').textContent = '';
+      $('qBindError').textContent = 'Check the strip width and join allowance.';
+    }
+    var cut = num('qCut');
+    var nSq = num('qNSq');
+    var sq = null;
+    if (isNaN(cut) || isNaN(nSq) || cut <= 0 || nSq < 1) { sq = null; }
+    else { sq = qYardsForSquares(nSq, cut, usable); }
+    if (sq === null) {
+      $('qSqOut').textContent = '';
+      $('qSqError').textContent = 'Check the cut square size and the number of squares wanted.';
+    } else {
+      $('qSqOut').textContent = 'Squares per yard: ' + sq.perYard + '. Squares per fat quarter: ' + sq.perFQ + '. For ' + nSq + ' squares: ' + sq.strips + ' strips, ' + qFmtYards(sq.yards) + ' or ' + sq.fqs + ' fat quarters.';
+    }
+    if (okTop) {
+      if (okBack) {
+        if (okBind) {
+          $('qTotalOut').textContent = 'Total fabric to buy: ' + qFmtYards(topBuy + backBest + bindYards) + ' (top ' + qFmtYards(topBuy) + ' plus backing ' + qFmtYards(backBest) + ' plus binding ' + qFmtYards(bindYards) + ').';
+        }
+      }
+    }
+    if (okTop === false || okBack === false || okBind === false) {
+      $('qTotalOut').textContent = '';
+    }
+  }
+  $('qPreset').addEventListener('change', function () {
+    var v = $('qPreset').value;
+    if (v !== 'custom') {
+      $('qW').value = presets[v][0];
+      $('qL').value = presets[v][1];
+    }
+    render();
+  });
+  var ids = ['qW', 'qL', 'qUsable', 'qBlock', 'qPieces', 'qWaste', 'qOverage', 'qBackFabric', 'qStripW', 'qStripCustom', 'qJoin', 'qBias', 'qCut', 'qNSq'];
+  var i;
+  for (i = 0; i < ids.length; i++) {
+    $(ids[i]).addEventListener('input', render);
+    $(ids[i]).addEventListener('change', render);
+  }
+  $('qW').addEventListener('input', function () { $('qPreset').value = 'custom'; });
+  $('qL').addEventListener('input', function () { $('qPreset').value = 'custom'; });
+  $('qStripW').addEventListener('change', function () {
+    if ($('qStripW').value === 'custom') { $('qStripCustomWrap').style.display = 'block'; }
+    else { $('qStripCustomWrap').style.display = 'none'; }
+    render();
+  });
+  render();
+})();
+</script>
+</body>
+</html>
